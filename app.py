@@ -175,12 +175,13 @@ if st.button("Simulate"):
         st.success("Done!")
 
 if 'df_b' in st.session_state:
+    
     tab1, tab2, tab3, tab4 = st.tabs([
-    "📈 Time Series",
-    "📊 Results",
-    "🕸️ Network",
-    "📘 Explanation"
-])
+        "📈 Time Series",
+        "📊 Results",
+        "🕸️ Network",
+        "📘 Explanation"
+    ])
     
     with tab1:
         fig = make_time_series_fig(st.session_state['df_b'], st.session_state['df_i'])
@@ -197,8 +198,8 @@ if 'df_b' in st.session_state:
                            f"{st.session_state['m_i']['r0']:.1f}"]
         })
         st.dataframe(df_res)
-        st.subheader("📐 Interpretation")
 
+        st.subheader("📐 Interpretation")
         r0_val = st.session_state['m_b']['r0']
 
         if r0_val > 1:
@@ -209,70 +210,64 @@ if 'df_b' in st.session_state:
     with tab3:
         fig_n = make_network_fig(st.session_state['G'], st.session_state['states'])
         st.plotly_chart(fig_n, use_container_width=True)
-with tab4:
 
-    st.header("📘 Model Explanation")
+    # ✅ FIXED: tab4 INSIDE the same block
+    with tab4:
 
-    explanation = load_explanation()
+        st.header("📘 Model Explanation")
 
-    # 🔹 Intro Box
-    st.info("This simulation models fake news spread using an epidemiological SIR model on a scale-free network.")
+        explanation = load_explanation()
 
-    # 🔹 Expandable full explanation
-    with st.expander("📖 Full Explanation", expanded=False):
-        st.text_area("", explanation, height=400)
+        st.info("This simulation models fake news spread using an epidemiological SIR model on a scale-free network.")
 
-    st.divider()
+        with st.expander("📖 Full Explanation", expanded=False):
+            st.text_area("", explanation, height=400)
 
-    # 🔹 FORMULA
-    st.subheader("📐 Key Formula")
+        st.divider()
 
-    st.latex(r"R_0 = \frac{\beta \cdot \langle k \rangle}{\gamma}")
+        st.subheader("📐 Key Formula")
+        st.latex(r"R_0 = \frac{\beta \cdot \langle k \rangle}{\gamma}")
 
-    st.markdown("""
-    **Where:**
-    - β → Infection rate  
-    - γ → Recovery rate  
-    - ⟨k⟩ → Average connections  
+        st.markdown("""
+        **Where:**
+        - β → Infection rate  
+        - γ → Recovery rate  
+        - ⟨k⟩ → Average connections  
 
-    👉 If R₀ > 1 → Spread grows  
-    👉 If R₀ < 1 → Spread dies  
-    """)
+        👉 If R₀ > 1 → Spread grows  
+        👉 If R₀ < 1 → Spread dies  
+        """)
 
-    st.divider()
+        st.divider()
 
-    # 🔹 Concepts
-    col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric("📢 Infection (β)", "Spread")
+        with col1:
+            st.metric("📢 Infection (β)", "Spread")
 
-    with col2:
-        st.metric("🛡️ Recovery (γ)", "Control")
+        with col2:
+            st.metric("🛡️ Recovery (γ)", "Control")
 
-    with col3:
-        st.metric("🌐 Network ⟨k⟩", "Connectivity")
+        with col3:
+            st.metric("🌐 Network ⟨k⟩", "Connectivity")
 
-    st.divider()
+        st.divider()
 
-    # 🔹 Insights
-    st.subheader("🧠 Key Insights")
+        st.subheader("🧠 Key Insights")
 
-    st.markdown("""
-    - Hubs accelerate spread  
-    - Fact-checkers reduce misinformation  
-    - Skeptics resist infection  
-    - Removing hubs slows spread  
-    """)
+        st.markdown("""
+        - Hubs accelerate spread  
+        - Fact-checkers reduce misinformation  
+        - Skeptics resist infection  
+        - Removing hubs slows spread  
+        """)
 
-    st.divider()
+        st.divider()
 
-    # 🔹 Download
-    st.download_button(
-        label="📥 Download Explanation",
-        data=explanation,
-        file_name="explanation.txt",
-        mime="text/plain"
-    )
-
+        st.download_button(
+            label="📥 Download Explanation",
+            data=explanation,
+            file_name="explanation.txt",
+            mime="text/plain"
+        )
 st.markdown("**Key:** SIR model on BA network. Skeptics resist infection. FC accelerate recovery. Scale-free hubs drive spread.")
