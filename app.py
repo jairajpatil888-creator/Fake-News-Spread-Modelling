@@ -11,6 +11,12 @@ warnings.filterwarnings('ignore')
 # States: 0=S, 1=I(Believers), 2=R, 3=Skeptics, 4=FC
 STATES = {0: '#00e5ff', 1: '#ff3366', 2: '#00ff88', 3: '#b44fff', 4: '#ff8c00'}
 LABELS = {0: 'Susceptible', 1: 'Believers', 2: 'Recovered', 3: 'Skeptics', 4: 'Fact-checkers'}
+def load_explanation():
+    try:
+        with open("explanation.txt", "r", encoding="utf-8") as f:
+            return f.read()
+    except:
+        return "⚠️ explanation.txt not found"
 
 @st.cache_data
 def build_network(N, m, seed=42):
@@ -169,7 +175,12 @@ if st.button("Simulate"):
         st.success("Done!")
 
 if 'df_b' in st.session_state:
-    tab1, tab2, tab3 = st.tabs(["Time Series", "Results", "Network"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+    "📈 Time Series",
+    "📊 Results",
+    "🕸️ Network",
+    "📘 Explanation"
+])
     
     with tab1:
         fig = make_time_series_fig(st.session_state['df_b'], st.session_state['df_i'])
@@ -186,9 +197,82 @@ if 'df_b' in st.session_state:
                            f"{st.session_state['m_i']['r0']:.1f}"]
         })
         st.dataframe(df_res)
+        st.subheader("📐 Interpretation")
+
+        r0_val = st.session_state['m_b']['r0']
+
+        if r0_val > 1:
+            st.error(f"R₀ = {r0_val:.2f} → Spread is growing 🚨")
+        else:
+            st.success(f"R₀ = {r0_val:.2f} → Spread is controlled ✅")
     
     with tab3:
         fig_n = make_network_fig(st.session_state['G'], st.session_state['states'])
         st.plotly_chart(fig_n, use_container_width=True)
+    with tab4:
+
+    st.header("📘 Model Explanation")
+
+    explanation = load_explanation()
+
+    # 🔹 Intro Box
+    st.info("This simulation models fake news spread using an epidemiological SIR model on a scale-free network.")
+
+    # 🔹 Expandable full explanation
+    with st.expander("📖 Full Explanation", expanded=False):
+        st.text_area("", explanation, height=400)
+
+    st.divider()
+
+    # 🔹 FORMULA VISUALIZATION (VERY IMPORTANT)
+    st.subheader("📐 Key Formula")
+
+    :contentReference[oaicite:0]{index=0}
+
+    st.markdown("""
+    **Where:**
+    - β → Infection rate (spread probability)
+    - γ → Recovery rate
+    - ⟨k⟩ → Average network degree
+
+    👉 If R₀ > 1 → Fake news spreads  
+    👉 If R₀ < 1 → Fake news dies out
+    """)
+
+    st.divider()
+
+    # 🔹 Concept Cards
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("📢 Infection (β)", "Spread Power")
+
+    with col2:
+        st.metric("🛡️ Recovery (γ)", "Resistance")
+
+    with col3:
+        st.metric("🌐 Network ⟨k⟩", "Connectivity")
+
+    st.divider()
+
+    # 🔹 Model Insights
+    st.subheader("🧠 Key Insights")
+
+    st.markdown("""
+    - Highly connected nodes (**hubs**) accelerate fake news spread  
+    - **Fact-checkers** reduce misinformation significantly  
+    - **Skeptics** slow down infection probability  
+    - Removing hubs drastically reduces spread  
+    """)
+
+    st.divider()
+
+    # 🔹 Download Button
+    st.download_button(
+        label="📥 Download Explanation",
+        data=explanation,
+        file_name="explanation.txt",
+        mime="text/plain"
+    )
 
 st.markdown("**Key:** SIR model on BA network. Skeptics resist infection. FC accelerate recovery. Scale-free hubs drive spread.")
