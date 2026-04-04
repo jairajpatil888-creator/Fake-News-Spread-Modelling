@@ -3,8 +3,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import random
 import math
 import warnings
@@ -37,13 +35,13 @@ def assign_roles(G, skeptic_frac, fc_frac, initial_infected_frac, seed=42):
     n_fc = int(N * fc_frac)
     ni = max(1, int(N * initial_infected_frac))
     
-    states = {n: 0 for n in G.nodes}  # All start Susceptible
-    for n in nodes[:n_sk]: states[n] = 3  # Skeptics
-    for n in nodes[n_sk:n_sk+n_fc]: states[n] = 4  # Fact-checkers
+    states = {n: 0 for n in G.nodes}
+    for n in nodes[:n_sk]: states[n] = 3
+    for n in nodes[n_sk:n_sk+n_fc]: states[n] = 4
     
     susceptible = [n for n in G.nodes if states[n] == 0]
     rng.shuffle(susceptible)
-    for n in susceptible[:ni]: states[n] = 1  # Initial infected
+    for n in susceptible[:ni]: states[n] = 1
     return states
 
 def sir_step(G, states, beta, gamma, fc_gamma_mult, skeptic_beta_mult):
@@ -51,14 +49,13 @@ def sir_step(G, states, beta, gamma, fc_gamma_mult, skeptic_beta_mult):
     new_states = states.copy()
     for node in G.nodes:
         s = states[node]
-        if s == 1:  # Infected tries to infect neighbors
+        if s == 1:
             for nb in G.neighbors(node):
                 nbs = states[nb]
-                if nbs in [0, 3]:  # Susceptible or Skeptic
+                if nbs in [0, 3]:
                     eff_beta = beta * skeptic_beta_mult if nbs == 3 else beta
                     if np.random.random() < eff_beta:
                         new_states[nb] = 1
-            # Recovery
             g = gamma * fc_gamma_mult if any(states[nb] == 4 for nb in G.neighbors(node)) else gamma
             if np.random.random() < g:
                 new_states[node] = 2
@@ -91,23 +88,26 @@ def run_simulation(G, states_init, beta, gamma, T, fc_gamma_mult, skeptic_beta_m
     df = pd.DataFrame(history)
     peak_inf = df['I'].max()
     final_rec = df['R'].iloc[-1]
-    avg_deg = 2 * Gw.number_of_edges / N if N > 0 else 0
+    avg_deg = 2 * Gw.number_of_edges() / N if N > 0 else 0
     r0 = beta * avg_deg / gamma if gamma > 0 else float('inf')
     
-    metrics = {'peak_infection': peak_inf, 'final_recovered': final_rec, 'r0': r0, 
-               'nodes_in_sim': N}
+    metrics = {'peak_infection': peak_inf, 'final_recovered': final_rec, 'r0': r0, 'nodes_in_sim': N}
     return df, metrics
 
-# Plot helpers (kept essential for charts)
 def make_time_series_fig(df_base, df_int=None, title="SIR Dynamics"):
     fig = go.Figure()
-    for col in ['S', 'I', 'R', 'SK', 'FC']:
-        fig.add_trace(go.Scatter(x=df_base['t'], y=df_base[col], name=LABELS[int(col[0]) if col != 'SK' and col != 'FC' else 3 if col=='SK' else 4],
-                                 line=dict(color=STATES[int(col[0]) if col != 'SK' and col != 'FC' else 3 if col=='SK' else 4], width=2.5)))
+    state_cols = ['S', 'I', 'R', 'SK', 'FC']
+    state_ids = [0,1,2,3,4]
+    
+    for i, col in enumerate(state_cols):
+        fig.add_trace(go.Scatter(x=df_base['t'], y=df_base[col], name=LABELS[state_ids[i]],
+                                 line=dict(color=STATES[state_ids[i]], width=2.5)))
         if df_int is not None:
-            fig.add_trace(go.Scatter(x=df_int['t'], y=df_int[col], name=f"{LABELS[int(col[0])]} (Int)", 
-                                     line=dict(color=STATES[int(col[0])], width=2, dash='dash')))
-    fig.update_layout(title=title, xaxis_title="Time Step", yaxis_title="% of Network")
+            fig.add_trace(go.Scatter(x=df_int['t'], y=df_int[col], name=f"{LABELS[state_ids[i]]} (Int)",
+                                     line=dict(color=STATES[state_ids[i]], width=2, dash='dash')))
+    
+    fig.update_layout(title=title, xaxis_title="Time Step", yaxis_title="% of Network",
+                      height=400)
     return fig
 
 def make_network_fig(G, states, title="Network State"):
@@ -120,84 +120,85 @@ def make_network_fig(G, states, title="Network State"):
             edge_x.extend([x0, x1, None])
             edge_y.extend([y0, y1, None])
     
-    edge_trace = go.Scatte(r x=edge_x, y=edge_y, line=dict(width=0.5, color='#555'), hoverinfo='none', mode='lines')
+    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.5, color='#555'), 
+                           hoverinfo='none', mode='lines')
     node_traces = []
+    
     for state in [0,1,2,3,4]:
         x_nodes, y_nodes = [], []
         for node in G.nodes():
             if states.get(node, 0) == state:
                 x_nodes.append(pos[node][0])
                 y_nodes.append(pos[node][1])
-        node_traces.append(go.Scatter(x=x_nodes, y=y_nodes, mode='markers+text',
-                                      marker=dict(size=10, color=STATES[state]),
-                                      name=LABELS[state]))
+        if x_nodes:
+            node_traces.append(go.Scatter(x=x_nodes, y=y_nodes, mode='markers',
+                                          marker=dict(size=10, color=STATES[state]),
+                                          name=LABELS[state]))
+    
     fig = go.Figure(data=[edge_trace] + node_traces)
-    fig.update_layout(showlegend=True, xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
+    fig.update_layout(title=title, showlegend=True,
+                      xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                      yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                      height=500)
     return fig
 
-# UI - Clean and simple for exam
-st.title("Fake News Spread Simulator (SIR on Scale-Free Networks)")
-st.write("Interactive model for misinformation propagation with Skeptics and Fact-checkers.")
+# Simple UI
+st.title("Fake News Spread Simulator")
+st.write("SIR model on scale-free networks with Skeptics & Fact-checkers")
 
-# Sidebar parameters
 with st.sidebar:
     st.header("Parameters")
-    N = st.slider("Network Size (N)", 100, 500, 200)
-    m = st.slider("BA Edges (m)", 2, 8, 3)
-    beta = st.slider("Infection Rate (β)", 0.01, 0.2, 0.08, 0.01)
-    gamma = st.slider("Recovery Rate (γ)", 0.01, 0.1, 0.03, 0.01)
-    init_frac = st.slider("Initial Infected %", 0.5, 5.0, 1.0, 0.5) / 100
-    T = st.slider("Steps (T)", 50, 150, 100, 10)
-    skeptic_frac = st.slider("Skeptic %", 0.0, 0.2, 0.1)
-    fc_frac = st.slider("Fact-checker %", 0.0, 0.15, 0.05)
-    fc_boost = st.checkbox("Boost Fact-checkers")
-    fc_mult = st.slider("FC Multiplier", 2.0, 5.0, 3.0, 0.5)
+    N = st.slider("Network Size", 100, 500, 200)
+    m = st.slider("BA m", 2, 8, 3)
+    beta = st.slider("β (Infection)", 0.01, 0.2, 0.08, 0.01)
+    gamma = st.slider("γ (Recovery)", 0.01, 0.1, 0.03, 0.01)
+    init_frac = st.slider("Initial Infected %", 0.5, 5, 1)/100
+    T = st.slider("Steps", 50, 150, 100)
+    skeptic_frac = st.slider("Skeptics %", 0.0, 0.2, 0.1)
+    fc_frac = st.slider("Fact-checkers %", 0.0, 0.15, 0.05)
+    fc_boost = st.checkbox("Boost FC")
+    fc_mult = st.slider("FC Mult", 2.0, 5.0, 3.0)
     remove_hubs = st.checkbox("Remove Hubs")
-    hub_pct = st.slider("Hub % to Remove", 5, 20, 10)
+    hub_pct = st.slider("Hub %", 5, 20, 10)
 
-if st.button("Run Simulation"):
-    with st.spinner("Running..."):
+if st.button("Run"):
+    with st.spinner("Simulating..."):
         G = build_network(N, m)
-        states_init = assign_roles(G, skeptic_frac, fc_frac, init_frac)
+        states = assign_roles(G, skeptic_frac, fc_frac, init_frac)
         
-        # Baseline
-        df_base, metrics_base = run_simulation(G, states_init, beta, gamma, T, 1.0, 0.25)
+        df_base, m_base = run_simulation(G, states, beta, gamma, T, 1.0, 0.25)
+        fc_g = fc_mult if fc_boost else 1.0
+        hub_p = hub_pct/100 if remove_hubs else 0
+        df_int, m_int = run_simulation(G, states, beta, gamma, T, fc_g, 0.25, hub_p)
         
-        # Intervention
-        fc_g_mult = fc_mult if fc_boost else 1.0
-        hub_p = hub_pct / 100 if remove_hubs else 0.0
-        df_int, metrics_int = run_simulation(G, states_init, beta, gamma, T, fc_g_mult, 0.25, hub_p)
-        
-        st.session_state['df_base'] = df_base
-        st.session_state['df_int'] = df_int
-        st.session_state['metrics_base'] = metrics_base
-        st.session_state['metrics_int'] = metrics_int
-        st.session_state['G'] = G
-        st.session_state['states'] = states_init
-        st.success("Done!")
+        st.session_state.update({
+            'df_base': df_base, 'df_int': df_int,
+            'm_base': m_base, 'm_int': m_int,
+            'G': G, 'states': states
+        })
+        st.success("Complete!")
 
-# Results tabs
 if 'df_base' in st.session_state:
-    tab1, tab2, tab3 = st.tabs(["Time Series", "Metrics", "Network"])
+    tab1, tab2, tab3 = st.tabs(["Dynamics", "Metrics", "Network"])
     
     with tab1:
-        fig_ts = make_time_series_fig(st.session_state['df_base'], st.session_state['df_int'])
-        st.plotly_chart(fig_ts, use_container_width=True)
+        fig = make_time_series_fig(st.session_state['df_base'], st.session_state['df_int'])
+        st.plotly_chart(fig, use_container_width=True)
     
     with tab2:
-        df_metrics = pd.DataFrame({
-            'Metric': ['Peak Infection %', 'Final Recovered %', 'R0'],
-            'Baseline': [st.session_state['metrics_base']['peak_infection'],
-                         st.session_state['metrics_base']['final_recovered'],
-                         st.session_state['metrics_base']['r0']],
-            'Intervention': [st.session_state['metrics_int']['peak_infection'],
-                             st.session_state['metrics_int']['final_recovered'],
-                             st.session_state['metrics_int']['r0']]
+        df_m = pd.DataFrame({
+            ' ': ['Peak I %', 'Final R %', 'R0'],
+            'Base': [f"{st.session_state['m_base']['peak_infection']:.1f}",
+                    f"{st.session_state['m_base']['final_recovered']:.1f}",
+                    f"{st.session_state['m_base']['r0']:.2f}"],
+            'Int': [f"{st.session_state['m_int']['peak_infection']:.1f}",
+                   f"{st.session_state['m_int']['final_recovered']:.1f}",
+                   f"{st.session_state['m_int']['r0']:.2f}"]
         })
-        st.dataframe(df_metrics)
+        st.dataframe(df_m)
     
     with tab3:
-        fig_net = make_network_fig(st.session_state['G'], st.session_state['states'], "Initial Network")
+        fig_net = make_network_fig(st.session_state['G'], st.session_state['states'])
         st.plotly_chart(fig_net, use_container_width=True)
 
-st.write("**Notes for Exam:** Model uses discrete SIR on scale-free (BA) networks. Skeptics resist infection (β*0.25), Fact-checkers boost recovery of neighbors. R0 = β*k/γ (k=avg degree). Interventions reduce peak significantly.")[file:1]
+st.markdown("**Exam Notes:** Discrete SIR on BA scale-free net. Skeptics: β×0.25. FC boost neighbor recovery. Interventions cut peak spread. R0=β×⟨k⟩/γ.")
