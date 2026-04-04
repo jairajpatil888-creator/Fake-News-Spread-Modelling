@@ -227,7 +227,7 @@ with tab4:
     # 🔹 FORMULA
     st.subheader("📐 Key Formula")
 
-    :contentReference[oaicite:0]{index=0}
+    st.latex(r"R_0 = \frac{\beta \cdot \langle k \rangle}{\gamma}")
 
     st.markdown("""
     **Where:**
