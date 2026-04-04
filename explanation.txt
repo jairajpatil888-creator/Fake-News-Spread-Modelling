@@ -1,0 +1,152 @@
+FAKE NEWS SPREAD SIMULATOR – EXPLANATION
+
+1. OVERVIEW
+This program simulates the spread of misinformation using an epidemiological
+model (SIR model) on a social network.
+
+The network is generated using a Barabási–Albert (BA) scale-free model,
+which mimics real-world social networks where some nodes (people) have
+many more connections (influencers/hubs).
+
+------------------------------------------------------------
+
+2. NETWORK MODEL
+
+The network is created using the Barabási–Albert model:
+
+- N = number of nodes (people)
+- m = number of connections each new node makes
+
+This produces a scale-free network with a power-law degree distribution.
+
+Average Degree Formula:
+avg_degree = (2 × number_of_edges) / N
+
+------------------------------------------------------------
+
+3. STATES IN THE MODEL
+
+Each node (person) can be in one of the following states:
+
+S  → Susceptible (can be influenced)
+I  → Infected / Believer (spreads fake news)
+R  → Recovered (no longer spreads)
+SK → Skeptic (reduced chance of believing)
+FC → Fact-checker (helps others recover faster)
+
+------------------------------------------------------------
+
+4. SIR MODEL DYNAMICS
+
+The simulation runs in discrete time steps.
+
+At each step:
+
+A. Infection Process:
+A believer infects neighbors with probability β
+
+For skeptics:
+effective_beta = β × skeptic_beta_multiplier
+
+Condition:
+If random() < β → Susceptible becomes Infected
+
+------------------------------------------------------------
+
+B. Recovery Process:
+An infected node recovers with probability γ
+
+If connected to fact-checker:
+effective_gamma = γ × fc_gamma_multiplier
+
+Condition:
+If random() < γ → Infected becomes Recovered
+
+------------------------------------------------------------
+
+C. Fact-checker Effect:
+Fact-checkers actively convert infected neighbors:
+
+If random() < (γ × fc_gamma_multiplier)
+→ Neighbor becomes Recovered
+
+------------------------------------------------------------
+
+5. BASIC REPRODUCTION NUMBER (R₀)
+
+R₀ represents how fast misinformation spreads.
+
+Formula:
+R₀ = (β × avg_degree) / γ
+
+Where:
+β = infection probability
+γ = recovery probability
+
+Interpretation:
+R₀ > 1 → Spread grows
+R₀ < 1 → Spread dies out
+
+------------------------------------------------------------
+
+6. INITIAL CONDITIONS
+
+- A fraction of nodes are set as:
+  • Skeptics
+  • Fact-checkers
+  • Initially infected
+
+Remaining nodes are Susceptible.
+
+------------------------------------------------------------
+
+7. SIMULATION METRICS
+
+The simulation tracks:
+
+1. Percentage of each state over time:
+   S(t), I(t), R(t), SK(t), FC(t)
+
+2. Peak Infection:
+   max(I(t))
+
+3. Final Recovered:
+   R(T)
+
+4. R₀ value
+
+------------------------------------------------------------
+
+8. INTERVENTIONS
+
+A. Fact-checker Boost:
+Increases recovery rate:
+γ → γ × multiplier
+
+B. Hub Removal:
+Removes top % of high-degree nodes (super spreaders)
+
+------------------------------------------------------------
+
+9. OUTPUT
+
+The simulation produces:
+
+- Time series of state percentages
+- Network visualization
+- Comparison of baseline vs intervention
+- Degree distribution graph
+- Centrality analysis
+
+------------------------------------------------------------
+
+10. KEY INSIGHT
+
+The spread of fake news behaves like an epidemic:
+
+- Highly connected nodes accelerate spread
+- Fact-checkers reduce spread
+- Skeptics resist infection
+- Removing hubs significantly slows propagation
+
+------------------------------------------------------------
