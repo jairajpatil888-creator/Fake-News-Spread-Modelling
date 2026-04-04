@@ -209,7 +209,7 @@ if 'df_b' in st.session_state:
     with tab3:
         fig_n = make_network_fig(st.session_state['G'], st.session_state['states'])
         st.plotly_chart(fig_n, use_container_width=True)
-    with tab4:
+with tab4:
 
     st.header("📘 Model Explanation")
 
@@ -224,50 +224,50 @@ if 'df_b' in st.session_state:
 
     st.divider()
 
-    # 🔹 FORMULA VISUALIZATION (VERY IMPORTANT)
+    # 🔹 FORMULA
     st.subheader("📐 Key Formula")
 
     :contentReference[oaicite:0]{index=0}
 
     st.markdown("""
     **Where:**
-    - β → Infection rate (spread probability)
-    - γ → Recovery rate
-    - ⟨k⟩ → Average network degree
+    - β → Infection rate  
+    - γ → Recovery rate  
+    - ⟨k⟩ → Average connections  
 
-    👉 If R₀ > 1 → Fake news spreads  
-    👉 If R₀ < 1 → Fake news dies out
+    👉 If R₀ > 1 → Spread grows  
+    👉 If R₀ < 1 → Spread dies  
     """)
 
     st.divider()
 
-    # 🔹 Concept Cards
+    # 🔹 Concepts
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("📢 Infection (β)", "Spread Power")
+        st.metric("📢 Infection (β)", "Spread")
 
     with col2:
-        st.metric("🛡️ Recovery (γ)", "Resistance")
+        st.metric("🛡️ Recovery (γ)", "Control")
 
     with col3:
         st.metric("🌐 Network ⟨k⟩", "Connectivity")
 
     st.divider()
 
-    # 🔹 Model Insights
+    # 🔹 Insights
     st.subheader("🧠 Key Insights")
 
     st.markdown("""
-    - Highly connected nodes (**hubs**) accelerate fake news spread  
-    - **Fact-checkers** reduce misinformation significantly  
-    - **Skeptics** slow down infection probability  
-    - Removing hubs drastically reduces spread  
+    - Hubs accelerate spread  
+    - Fact-checkers reduce misinformation  
+    - Skeptics resist infection  
+    - Removing hubs slows spread  
     """)
 
     st.divider()
 
-    # 🔹 Download Button
+    # 🔹 Download
     st.download_button(
         label="📥 Download Explanation",
         data=explanation,
