@@ -152,7 +152,7 @@ with st.sidebar:
         gamma = st.slider("γ", 0.01, 0.08, 0.03)
     T = st.slider("Steps", 50, 120, 80)
     init_pct = st.slider("Init I %", 0.5, 3.0, 1.0)
-    skeptic_pct = st.slider("Skeptics %", 5, 30, 8)
+    skeptic_pct = st.slider("Skeptics %", 0.0, 0.15, 0.08)
     fc_pct = st.slider("FC %", 0.0, 0.1, 0.04)
     
     st.subheader("Interventions")
