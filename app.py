@@ -7,6 +7,7 @@ import random
 import math
 import warnings
 warnings.filterwarnings('ignore')
+st.set_page_config(page_title="Fake-News-Spread-Modelling")
 
 # States: 0=S, 1=I(Believers), 2=R, 3=Skeptics, 4=FC
 STATES = {0: '#00e5ff', 1: '#ff3366', 2: '#00ff88', 3: '#b44fff', 4: '#ff8c00'}
